@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -33,7 +32,6 @@ class Product extends Model
 
     public static function createProduct($data)
     {
-        return DB::transaction(function () use ($data) {
             $product = self::create([
                 'product_name' => $data['product_name'],
                 'company_id' => $data['company_id'],
@@ -51,12 +49,10 @@ class Product extends Model
             }
 
             return $product;
-        });
     }
 
     public function updateProduct($data)
     {
-        return DB::transaction(function () use ($data) {
             $this->product_name = $data['product_name'];
             $this->company_id = $data['company_id'];
             $this->price = $data['price'];
@@ -73,6 +69,5 @@ class Product extends Model
             }
 
             return $this;
-        });
     }
 }

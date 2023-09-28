@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Company;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
 
 class ProductController extends Controller
 {
@@ -42,32 +44,34 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'product_name' => 'required',
-            'company_id' => 'required',
-            'price' => 'required|numeric', // 数字のみを受け付けるバリデーションを追加
-            'stock' => 'required|numeric', // 数字のみを受け付けるバリデーションを追加
-            'comment' => 'nullable',
-            'img_path' => 'nullable|image|max:2048',
-        ]);
+        return DB::transaction(function () use ($request) {
+            $request->validate([
+                'product_name' => 'required',
+                'company_id' => 'required',
+                'price' => 'required|numeric', // 数字のみを受け付けるバリデーションを追加
+                'stock' => 'required|numeric', // 数字のみを受け付けるバリデーションを追加
+                'comment' => 'nullable',
+                'img_path' => 'nullable|image|max:2048',
+            ]);
 
-        $product = new Product([
-            'product_name' => $request->get('product_name'),
-            'company_id' => $request->get('company_id'),
-            'price' => $request->get('price'),
-            'stock' => $request->get('stock'),
-            'comment' => $request->get('comment'),
-        ]);
+            $product = new Product([
+                'product_name' => $request->get('product_name'),
+                'company_id' => $request->get('company_id'),
+                'price' => $request->get('price'),
+                'stock' => $request->get('stock'),
+                'comment' => $request->get('comment'),
+            ]);
 
-        if ($request->hasFile('img_path')) {
-            $filename = $request->img_path->getClientOriginalName();
-            $filePath = $request->img_path->storeAs('products', $filename, 'public');
-            $product->img_path = '/storage/' . $filePath;
-        }
+            if ($request->hasFile('img_path')) {
+                $filename = $request->img_path->getClientOriginalName();
+                $filePath = $request->img_path->storeAs('products', $filename, 'public');
+                $product->img_path = '/storage/' . $filePath;
+            }
 
-        $product->save();
+            $product->save();
 
-        return redirect('products');
+            return redirect('products');                
+        });
     }
 
     public function show(Product $product)
@@ -84,28 +88,32 @@ class ProductController extends Controller
 
     public function update(Request $request, Product $product)
     {
-        $request->validate([
-            'product_name' => 'required',
-            'price' => 'required|numeric', // 数字のみを受け付けるバリデーションを追加
-            'stock' => 'required|numeric', // 数字のみを受け付けるバリデーションを追加
-            'comment' => 'nullable', // 'nullable' であれば空でも受け付けます
-        ]);
+        return DB::transaction(function () use ($request, $product){
+            $request->validate([
+                'product_name' => 'required',
+                'price' => 'required|numeric', // 数字のみを受け付けるバリデーションを追加
+                'stock' => 'required|numeric', // 数字のみを受け付けるバリデーションを追加
+                'comment' => 'nullable', // 'nullable' であれば空でも受け付けます
+            ]);
 
-        $product->product_name = $request->product_name;
-        $product->price = $request->price;
-        $product->stock = $request->stock;
-        $product->comment = $request->comment;
+            $product->update([
+                'product_name' => $request->product_name,
+                'price' => $request->price,
+                'stock' => $request->stock,
+                'comment' => $request->comment,
+            ]);
 
-        if ($request->hasFile('img_path')) {
-            $filename = $request->img_path->getClientOriginalName();
-            $filePath = $request->img_path->storeAs('products', $filename, 'public');
-            $product->img_path = '/storage/' . $filePath;
-        }
+            if ($request->hasFile('img_path')) {
+                $filename = $request->img_path->getClientOriginalName();
+                $filePath = $request->img_path->storeAs('products', $filename, 'public');
+                $product->img_path = '/storage/' . $filePath;
+            }
 
-        $product->save();
+            $product->save();
 
-        return redirect()->route('products.index')
-            ->with('success', 'Product updated successfully');
+            return redirect()->route('products.index')
+                ->with('success', 'Product updated successfully');
+        });
     }
 
     public function destroy(Product $product)
